@@ -25,6 +25,8 @@ func main() {
 		processPart1(lines)
 	case 2:
 		processPart2(lines)
+	default:
+		os.Exit(1)
 	}
 }
 
