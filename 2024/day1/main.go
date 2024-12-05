@@ -1,24 +1,18 @@
 package main
 
 import (
+	"aoc"
 	"fmt"
 	"math"
 	"os"
 	"sort"
 	"strconv"
 	"strings"
-
-	"aoc/cli"
 )
 
 func main() {
-	config := cli.ParseFlags()
-
-	lines, err := cli.ReadFile(config.File)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	config := aoc.ParseFlags()
+	lines := aoc.ReadFile(config.File)
 
 	switch config.Part {
 	case 1:

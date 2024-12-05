@@ -1,12 +1,12 @@
-package cli
+package aoc
 
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"log"
 	"log/slog"
 	"os"
+	"strconv"
 )
 
 type Config struct {
@@ -32,10 +32,10 @@ func ParseFlags() Config {
 	}
 }
 
-func ReadFile(filePath string) ([]string, error) {
+func ReadFile(filePath string) []string {
 	file, err := os.Open(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("error opening file: %v", err)
+		panic(err)
 	}
 	defer file.Close()
 
@@ -46,8 +46,16 @@ func ReadFile(filePath string) ([]string, error) {
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("error reading file: %v", err)
+		panic(err)
 	}
 
-	return lines, nil
+	return lines
+}
+
+func StringToInt(s string) int {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return i
 }
