@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
+	"log"
+	"log/slog"
 	"os"
 )
 
@@ -15,8 +17,14 @@ type Config struct {
 func ParseFlags() Config {
 	partPtr := flag.Int("part", 1, "Part number (1 or 2)")
 	filePtr := flag.String("file", "input.txt", "Input text file")
+	debugPtr := flag.Bool("debug", false, "Toggle debug")
 
 	flag.Parse()
+
+	log.SetFlags(log.Lshortfile)
+	if *debugPtr == true {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+	}
 
 	return Config{
 		Part: *partPtr,
