@@ -1,0 +1,218 @@
+package main
+
+import (
+	"aoc"
+	"fmt"
+	l "log/slog"
+	"os"
+	"runtime/pprof"
+	"slices"
+	"strings"
+)
+
+type Map struct {
+	rows      int
+	cols      int
+	start     Position
+	allowed   []Position
+	forbidden []Position
+}
+
+type Position struct {
+	x int
+	y int
+}
+
+type PositionWithDir struct {
+	x   int
+	y   int
+	dir string
+}
+
+type Guard struct {
+	pos       Position
+	visited   []Position
+	// vis 	  map[Position]string
+	track     []PositionWithDir
+	direction string
+	exit      Position
+}
+
+func parseMap(lines []string) Map {
+
+	f := Map{}
+	f.rows = len(lines)
+
+	for i, line := range lines {
+		s := strings.Split(line, "")
+		if f.cols == 0 {
+			f.cols = len(s)
+		}
+
+		for j, v := range s {
+			pos := Position{x: j, y: i}
+			if v == "." {
+				f.allowed = append(f.allowed, pos)
+			} else if v == "#" {
+				f.forbidden = append(f.forbidden, pos)
+			} else if v == "^" {
+				f.start = pos
+				f.allowed = append(f.allowed, pos)
+			} else {
+				l.Warn("Unknown char", "char", v)
+			}
+		}
+	}
+
+	return f
+}
+
+func (g *Guard) Walk(m Map) bool {
+
+	newPos := Position{}
+	if g.direction == "up" {
+		newPos.x = g.pos.x
+		newPos.y = g.pos.y - 1
+	} else if g.direction == "down" {
+		newPos.x = g.pos.x
+		newPos.y = g.pos.y + 1
+	} else if g.direction == "right" {
+		newPos.x = g.pos.x + 1
+		newPos.y = g.pos.y
+	} else if g.direction == "left" {
+		newPos.x = g.pos.x - 1
+		newPos.y = g.pos.y
+	}
+
+	// l.Debug("Walk", "pos", g.pos, "direction", g.direction, "target", newPos)
+
+	if slices.Contains(m.forbidden, newPos) {
+		g.direction = getNextDirection(g.direction)
+		l.Debug("Change direction", "direction", g.direction)
+		return true
+	} else if slices.Contains(m.allowed, newPos) {
+		g.pos = newPos
+		l.Debug("New position", "pos", g.pos)
+	} else {
+		g.exit = newPos
+		l.Debug("Found Exit", "exit", g.exit)
+		return false
+	}
+
+	if !slices.Contains(g.visited, g.pos) {
+		g.visited = append(g.visited, g.pos)
+	}
+
+	return true
+}
+
+func getNextDirection(d string) string {
+	dirMap := map[string]string{
+		"up":    "right",
+		"right": "down",
+		"down":  "left",
+		"left":  "up",
+	}
+	return dirMap[d]
+}
+
+func processPart1(lines []string) {
+	m := parseMap(lines)
+
+	g := &Guard{
+		pos:       m.start,
+		visited:   []Position{m.start},
+		direction: "up",
+	}
+
+	for {
+		if !g.Walk(m) {
+			break
+		}
+	}
+
+	fmt.Println("part 1: ", len(g.visited))
+}
+
+func processPart2(lines []string) {
+	m := parseMap(lines)
+	total := 0
+
+	g := &Guard{
+		pos:       m.start,
+		visited:   []Position{},
+		direction: "up",
+	}
+
+	// resolve 1 time first to get all visited place
+	for {
+		if !g.Walk(m) {
+			break
+		}
+	}
+
+	for i, v := range g.visited {
+		// Same player play again
+		g.pos = m.start
+		g.track = []PositionWithDir{}
+		g.direction = "up"
+
+		l.Debug("Try and add caillou", "iter", i, "caillou", v)
+		m.forbidden = append(m.forbidden, v)
+
+		for {
+			if !g.Walk(m) {
+				break
+			}
+
+			newPosWithDir := PositionWithDir{
+				x:   g.pos.x,
+				y:   g.pos.y,
+				dir: g.direction,
+			}
+
+			// already passed here with same direction ?
+			isLooping := slices.Contains(g.track, PositionWithDir{
+				x:   g.pos.x,
+				y:   g.pos.y,
+				dir: g.direction,
+			})
+
+			if isLooping {
+				total += 1
+				break
+			}
+
+			g.track = append(g.track, newPosWithDir)
+		}
+
+		// remove caillou
+		m.forbidden = m.forbidden[:len(m.forbidden)-1]
+	}
+
+	fmt.Println("part 2: ", total)
+}
+
+func main() {
+	config := aoc.ParseFlags()
+	lines := aoc.ReadFile(config.File)
+
+	if config.Profiling {
+		f, err := os.Create("cpu.prof")
+		if err != nil {
+			panic(err)
+		}
+
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+	}
+
+	switch config.Part {
+	case 1:
+		processPart1(lines)
+	case 2:
+		processPart2(lines)
+	default:
+		os.Exit(1)
+	}
+}

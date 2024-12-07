@@ -10,14 +10,16 @@ import (
 )
 
 type Config struct {
-	Part int
-	File string
+	Part      int
+	File      string
+	Profiling bool
 }
 
 func ParseFlags() Config {
 	partPtr := flag.Int("part", 1, "Part number (1 or 2)")
 	filePtr := flag.String("file", "input.txt", "Input text file")
 	debugPtr := flag.Bool("debug", false, "Toggle debug")
+	profiling := flag.Bool("profiling", false, "Toggle profiling")
 
 	flag.Parse()
 
@@ -29,6 +31,7 @@ func ParseFlags() Config {
 	return Config{
 		Part: *partPtr,
 		File: *filePtr,
+		Profiling: *profiling,
 	}
 }
 
