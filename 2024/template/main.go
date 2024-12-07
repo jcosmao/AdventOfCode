@@ -3,27 +3,31 @@ package main
 import (
 	"aoc"
 	"fmt"
+	l "log/slog"
 	"os"
+	"runtime/pprof"
 	"strings"
 )
-
-func main() {
-	config := aoc.ParseFlags()
-	lines := aoc.ReadFile(config.File)
-
-	switch config.Part {
-	case 1:
-		processPart1(lines)
-	case 2:
-		processPart2(lines)
-	default:
-		os.Exit(1)
-	}
-}
 
 // FileFormat
 type FileFormat struct {
 	Lines [][]int
+}
+
+func processPart1(lines []string) {
+	file := parseLines(lines)
+	l.Debug("", "file", file)
+
+	var total int = 0
+	fmt.Println("part 1: ", int(total))
+}
+
+func processPart2(lines []string) {
+	file := parseLines(lines)
+	l.Debug("", "file", file)
+
+	var total int = 0
+	fmt.Println("part 2: ", int(total))
 }
 
 func parseLines(lines []string) FileFormat {
@@ -34,7 +38,7 @@ func parseLines(lines []string) FileFormat {
 		splitted := strings.Fields(line)
 
 		vals := []int{}
-		for i := 0; i <= 1; i++ {
+		for i := 0; i < len(splitted); i++ {
 			vals = append(vals, aoc.StringToInt(splitted[i]))
 		}
 		f.Lines = append(f.Lines, vals)
@@ -43,18 +47,25 @@ func parseLines(lines []string) FileFormat {
 	return f
 }
 
-func processPart1(lines []string) {
-	file := parseLines(lines)
-	fmt.Println(file)
+func main() {
+	config := aoc.ParseFlags()
+	lines := aoc.ReadFile(config.File)
 
-	var total int = 0
-	fmt.Println("part 1: ", int(total))
-}
+	if config.Profiling {
+		_ = os.Remove("cpu.prof")
+		cpuf, _ := os.Create("cpu.prof")
+		pprof.StartCPUProfile(cpuf)
+		defer cpuf.Close()
+		defer pprof.StopCPUProfile()
+		l.Info("[profiling] go tool pprof cpu.prof")
+	}
 
-func processPart2(lines []string) {
-	file := parseLines(lines)
-	fmt.Println(file)
-
-	var total int = 0
-	fmt.Println("part 2: ", int(total))
+	switch config.Part {
+	case 1:
+		processPart1(lines)
+	case 2:
+		processPart2(lines)
+	default:
+		os.Exit(1)
+	}
 }
