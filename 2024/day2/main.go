@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"aoc"
+	aoc "aoc/lib"
 )
 
 func main() {

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"aoc"
+	aoc "aoc/lib"
 	"fmt"
 	"math"
 	"os"

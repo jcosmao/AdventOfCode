@@ -1,0 +1,51 @@
+package main
+
+import (
+	"aoc/lib"
+	aoc "aoc/lib"
+	l "log/slog"
+)
+
+type Node struct {
+	repr string
+}
+
+func (n Node) Display() string {
+	return n.repr
+}
+
+func main() {
+
+	aoc.ParseFlags()
+
+	m := aoc.Map{
+		Cols: 10,
+		Rows: 10,
+		Nodes: make(map[lib.Position]lib.T),
+	}
+
+	start := aoc.Position{X:0, Y:0}
+	c := aoc.Cursor{
+		Coord: start,
+		Map: &m,
+		Track: []*aoc.Position{&start},
+	}
+
+	c.Move(aoc.Down)
+	c.Move(aoc.Down)
+	c.Move(aoc.Down)
+	c.Move(aoc.Left)
+	c.Move(aoc.Right)
+	c.Move(aoc.Right)
+
+	for r:= 0;  r < m.Rows;  r++ {
+		for c := 0; c < m.Cols; c++ {
+			pos := aoc.Position{X: r, Y: c}
+			m.Nodes[pos] = Node{repr: "."}
+		}
+	}
+
+	m.Display()
+
+	l.Info("Cursor", "c", c)
+}
