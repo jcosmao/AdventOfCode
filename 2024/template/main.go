@@ -9,47 +9,30 @@ import (
 	"strings"
 )
 
-// FileFormat
-type FileFormat struct {
-	Lines [][]int
+// Day
+type Day struct {
+	config aoc.Config
 }
 
-func processPart1(lines []string) {
-	file := parseLines(lines)
-	l.Debug("", "file", file)
+func getResult(d *Day) int {
+	total := 0
 
-	var total int = 0
-	fmt.Println("part 1: ", int(total))
-}
-
-func processPart2(lines []string) {
-	file := parseLines(lines)
-	l.Debug("", "file", file)
-
-	var total int = 0
-	fmt.Println("part 2: ", int(total))
-}
-
-func parseLines(lines []string) FileFormat {
-
-	f := FileFormat{}
-
-	for _, line := range lines {
-		splitted := strings.Fields(line)
-
-		vals := []int{}
-		for i := 0; i < len(splitted); i++ {
-			vals = append(vals, aoc.StringToInt(splitted[i]))
-		}
-		f.Lines = append(f.Lines, vals)
+	if d.config.Part == 1 {
+	} else if d.config.Part == 2 {
 	}
 
-	return f
+	return total
+}
+
+func parseLines(lines []string, day *Day) {
+
+	for i, line := range lines {
+		sline := strings.Split(line, "")
+	}
 }
 
 func main() {
 	config := aoc.ParseFlags()
-	lines := aoc.ReadFile(config.File)
 
 	if config.Profiling {
 		_ = os.Remove("cpu.prof")
@@ -59,13 +42,16 @@ func main() {
 		defer pprof.StopCPUProfile()
 		l.Info("[profiling] go tool pprof cpu.prof")
 	}
+	defer aoc.Timer("main")()
 
-	switch config.Part {
-	case 1:
-		processPart1(lines)
-	case 2:
-		processPart2(lines)
-	default:
-		os.Exit(1)
+	lines := aoc.ReadFile(config.File)
+	day := &Day{
+		config: config,
 	}
+
+	parseLines(lines, day)
+	l.Debug("Parsed input", "Day", day)
+
+	res := getResult(day)
+	fmt.Printf("part %d: %d\n", config.Part, res)
 }

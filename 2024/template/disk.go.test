@@ -1,0 +1,141 @@
+package main
+
+import (
+	"fmt"
+)
+
+// File représente un fichier avec un descripteur et une taille (liste de blocs)
+type File struct {
+	Descriptor int
+	Size       int
+	Blocks     []int
+}
+
+// Disk représente un disque avec des blocs
+type Disk struct {
+	Blocks      map[int]*int
+	FreeBlocks  map[int]bool
+	Files       map[int]*File
+}
+
+// NewFile crée un nouveau fichier
+func NewFile(descriptor int, size int) *File {
+	return &File{
+		Descriptor: descriptor,
+		Size:       size,
+		Blocks:     make([]int, size),
+	}
+}
+
+// NewDisk crée un nouveau disque avec une taille donnée
+func NewDisk(size int) *Disk {
+	blocks := make(map[int]*int, size)
+	freeBlocks := make(map[int]bool, size)
+	for i := 0; i < size; i++ {
+		freeBlocks[i] = true
+	}
+	return &Disk{Blocks: blocks, FreeBlocks: freeBlocks, Files: make(map[int]*File)}
+}
+
+// WriteFile écrit un fichier sur le disque
+func (d *Disk) WriteFile(file *File) error {
+	startBlock := -1
+	for i := 0; i < len(d.FreeBlocks); i++ {
+		if d.FreeBlocks[i] {
+			startBlock = i
+			break
+		}
+	}
+
+	if startBlock == -1 || startBlock+len(file.Blocks) > len(d.FreeBlocks) {
+		return fmt.Errorf("not enough space on disk")
+	}
+
+	for i := 0; i < len(file.Blocks); i++ {
+		if d.Blocks[startBlock+i] != nil {
+			return fmt.Errorf("block %d is already used", startBlock+i)
+		}
+		d.Blocks[startBlock+i] = &file.Blocks[i]
+		delete(d.FreeBlocks, startBlock+i)
+	}
+
+	d.Files[file.Descriptor] = file
+	return nil
+}
+
+// ReadFile lit un fichier depuis le disque
+func (d *Disk) ReadFile(descriptor int) (*File, error) {
+	file, exists := d.Files[descriptor]
+	if !exists {
+		return nil, fmt.Errorf("file with descriptor %d not found", descriptor)
+	}
+
+	for i := range file.Blocks {
+		if d.Blocks[i] == nil {
+			return nil, fmt.Errorf("block %d is empty", i)
+		}
+		file.Blocks[i] = *d.Blocks[i]
+	}
+
+	return file, nil
+}
+
+// Defragment défragmente le disque en déplaçant les fichiers au début du disque
+func (d *Disk) Defragment() error {
+	currentBlock := 0
+	for _, file := range d.Files {
+		for i := 0; i < len(file.Blocks); i++ {
+			if d.Blocks[currentBlock+i] != nil {
+				return fmt.Errorf("block %d is already used", currentBlock+i)
+			}
+			d.Blocks[currentBlock+i] = &file.Blocks[i]
+			delete(d.FreeBlocks, currentBlock+i)
+		}
+		currentBlock += len(file.Blocks)
+	}
+
+	// Marquer les blocs libres
+	for i := currentBlock; i < len(d.FreeBlocks); i++ {
+		d.FreeBlocks[i] = true
+	}
+
+	return nil
+}
+
+func main() {
+	// Créer un nouveau disque avec 10 blocs
+	disk := NewDisk(10)
+
+	// Créer des fichiers
+	file1 := NewFile(1, 3)
+	file1.Blocks = []int{1, 2, 3}
+
+	file2 := NewFile(2, 2)
+	file2.Blocks = []int{4, 5}
+
+	// Écrire les fichiers sur le disque
+	err := disk.WriteFile(file1)
+	if err != nil {
+		fmt.Println("Error writing file:", err)
+		return
+	}
+
+	err = disk.WriteFile(file2)
+	if err != nil {
+		fmt.Println("Error writing file:", err)
+		return
+	}
+
+	// Afficher les blocs du disque avant la défragmentation
+	fmt.Println("Disk blocks before defragmentation:", disk.Blocks)
+
+	// Défragmenter le disque
+	err = disk.Defragment()
+	if err != nil {
+		fmt.Println("Error defragmenting disk:", err)
+		return
+	}
+
+	// Afficher les blocs du disque après la défragmentation
+	fmt.Println("Disk blocks after defragmentation:", disk.Blocks)
+}
